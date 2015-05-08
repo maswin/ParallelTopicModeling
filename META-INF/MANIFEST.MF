@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Class-Path: . topic_lib/commons-io-2.4-javadoc.jar topic_lib/commons-i
+ o-2.4-test-sources.jar topic_lib/trove-3.0.3.jar topic_lib/commons-io
+ -2.4.jar topic_lib/junit.jar topic_lib/commons-io-2.4-sources.jar top
+ ic_lib/mallet-deps.jar topic_lib/trove-3.0.3-src.jar topic_lib/common
+ s-io-2.4-tests.jar topic_lib/mallet.jar
+Main-Class: hierarchicaltopicmodel.TopicHierarchy
+
