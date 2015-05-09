@@ -37,7 +37,7 @@ public class MergerServices {
 
 			Thread[] threads = new Thread[NTHREAD];
 			for (int i = 0; i < NTHREAD; i++) {
-				threads[i] = new Thread(new MyRunnable1(i+1,lock));
+				threads[i] = new Thread(new MyRunnable(i+1,lock));
 				threads[i].start();
 			}
 			for (Thread thread : threads) {
@@ -56,14 +56,13 @@ public class MergerServices {
 
 
 
-	class MyRunnable1 implements Runnable {
+	class MyRunnable implements Runnable {
 		int id;
 		Object lock;
-		MyRunnable1(int temp,Object l){
+		MyRunnable(int temp,Object l){
 			id = temp;
 			lock = l;
 		}
-		@Override
 		public void run() {
 			NCRPNode firstNode = null, secondNode = null;
 
