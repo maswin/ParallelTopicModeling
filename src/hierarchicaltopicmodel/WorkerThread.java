@@ -99,8 +99,8 @@ public class WorkerThread implements Runnable {
 	
 	public void removeStopWords(File inputDirectory) {
 		
-		String command1 = "cd /home/aswin/mallet-2.0.7/\nbin/mallet import-dir --input " + inputDirectory.getAbsolutePath()+ " --output " + inputDirectory.getAbsolutePath() + ".mallet --keep-sequence --remove-stopwords"; //linux Change
-		String filename1 = "/home/aswin/workspace/ParallelTopicModeling/var/"+inputDirectory.getName()+"Features.sh"; //linux Change
+		String command1 = "cd /home/mukuntha/mallet-2.0.7/\nbin/mallet import-dir --input " + inputDirectory.getAbsolutePath()+ " --output " + inputDirectory.getAbsolutePath() + ".mallet --keep-sequence --remove-stopwords"; //linux Change
+		String filename1 = "/home/mukuntha/git/ParallelTopicModeling/var/"+inputDirectory.getName()+"Features.sh"; //linux Change
 		
 		InputOutputReader ior = new InputOutputReader();
 		ior.processInput(command1, filename1);

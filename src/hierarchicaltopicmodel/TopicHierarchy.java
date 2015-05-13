@@ -87,7 +87,7 @@ public class TopicHierarchy {
 		hlda.printNode(root, 0, pw);
 		pw.close();
 
-		displayDocuments(root,0);
+		//displayDocuments(root,0);
 		long endTime = System.nanoTime();
 		System.out.println("Total Running Time = " + (endTime-startTime));
 	}
