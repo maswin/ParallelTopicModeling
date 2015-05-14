@@ -203,11 +203,6 @@ public class TreeMerger {
 		double adjMatrix[][]=new double[numOfVertices+1][numOfVertices+1];
 		for(int i=1; i<=numOfVertices; i++){
 			for(int j=1; j<=numOfVertices; j++){
-				if(i<=subTreeRef.size()&&j>subTreeRef.size()){
-					int index=j-subTreeRef.size();
-					adjMatrix[i][j]=findSimilarity(subTreeRef.get(i),subTreeNonRef.get(index));
-					adjMatrix[j][i]=adjMatrix[i][j];
-				}
 				if (i == j)
 
                 {
@@ -217,6 +212,13 @@ public class TreeMerger {
                     continue;
 
                 }
+				
+				if(i<=subTreeRef.size()&&j>subTreeRef.size()){
+					int index=j-subTreeRef.size();
+					adjMatrix[i][j]=findSimilarity(subTreeRef.get(i),subTreeNonRef.get(index));
+					adjMatrix[j][i]=adjMatrix[i][j];
+				}
+				
 
                 if (adjMatrix[i][j] == 0)
 
@@ -714,7 +716,7 @@ public class TreeMerger {
 
     private int numberOfVertices;
 
-    public static final int MAX_VALUE = 999;
+    public static final double MAX_VALUE = Double.MAX_VALUE;
 
     private int visited[];
 

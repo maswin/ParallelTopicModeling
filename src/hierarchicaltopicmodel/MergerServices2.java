@@ -34,7 +34,7 @@ public class MergerServices2 {
 			simMatrix=new double[subTreeRoots.size()][subTreeRoots.size()];
 			mostSimilarTrees=new HashMap<NCRPNode, List<NCRPNode>>();
 			for(int i=0; i<subTreeRoots.size(); i++){
-				double min=Double.MIN_VALUE;
+				double min=Double.MAX_VALUE;
 				List<NCRPNode> mostSimilar=new ArrayList<NCRPNode>();
 				for(int j=0; j<subTreeRoots.size(); j++){
 					if(j>i){
@@ -45,10 +45,10 @@ public class MergerServices2 {
 						if(simMatrix[i][j]<min){
 							min=simMatrix[i][j];
 							mostSimilar.clear();
-							mostSimilar.add(subTreeRoots.get(i));
+							mostSimilar.add(subTreeRoots.get(j));
 						}
 						else if(simMatrix[i][j]==min){
-							mostSimilar.add(subTreeRoots.get(i));
+							mostSimilar.add(subTreeRoots.get(j));
 						}
 					}
 
