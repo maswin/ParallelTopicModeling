@@ -22,7 +22,7 @@ import cc.mallet.types.InstanceList;
 
 public class TopicHierarchy {
 
-	public static void main(String args[]) throws NumberFormatException, IOException  {
+	public static void main(String args[]) throws NumberFormatException, IOException, InterruptedException  {
 
 		long startTime = System.nanoTime();
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));

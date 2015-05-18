@@ -647,6 +647,7 @@ public class HierarchicalLDA implements Serializable{
 		public NCRPNode parent;
 		int level;
 		
+		//Helper parameter to identify if the node can be merged
 		int mergeId;
 		
 		int totalTokens;
@@ -656,7 +657,6 @@ public class HierarchicalLDA implements Serializable{
 		HashMap<String, Integer> wordCount;
 		
 		//Synchronised Setter & Getter
-
 		public synchronized ArrayList<NCRPNode> getChildren() {
 			List<NCRPNode> newList = new ArrayList<NCRPNode>();
 			Iterator<NCRPNode> it = children.iterator();
@@ -749,8 +749,19 @@ public class HierarchicalLDA implements Serializable{
 			return this.documents.size();
 		}
 		public NCRPNode() {
+			customers = 0;
+			documents = new ArrayList<String>();
+			this.parent = null;
+			children = new ArrayList<NCRPNode>();
+			this.level = 0;
 			wordCount = new HashMap<String,Integer>();
+			//System.out.println("new node at level " + level);
+	    
 			totalTokens = 0;
+			typeCounts = new int[0];
+
+			nodeID = totalNodes;
+			totalNodes++;
 		}
 		public NCRPNode(NCRPNode parent, int dimensions, int level) {
 			customers = 0;
@@ -772,12 +783,6 @@ public class HierarchicalLDA implements Serializable{
 			this(null, dimensions, 0);
 		}
 		
-		public void lockNode(){
-			
-		}
-		public void releaseNode(){
-			
-		}
 		
 		public NCRPNode copy() {
 			NCRPNode copyNode = new NCRPNode(this.typeCounts.length);
