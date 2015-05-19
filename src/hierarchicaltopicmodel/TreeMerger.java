@@ -1,5 +1,7 @@
 package hierarchicaltopicmodel;
 
+import graph.Kruskal;
+import graph.UndirectedGraph;
 import hierarchicaltopicmodel.HierarchicalLDA.NCRPNode;
 
 import java.io.IOException;
@@ -12,6 +14,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.Stack;
 
@@ -194,33 +197,6 @@ public class TreeMerger {
 		}
 	}
 
-	public double[][] formMST(List<NCRPNode> subTreeRef, List<NCRPNode> subTreeNonRef) throws IOException{
-		System.out.println("Forming MST");
-		int numOfVertices=subTreeRef.size()+subTreeNonRef.size();
-		double adjMatrix[][]=new double[numOfVertices+1][numOfVertices+1];
-		for(int i=1; i<=numOfVertices; i++){
-			for(int j=1; j<=numOfVertices; j++){
-				if (i == j)
-                {
-                    adjMatrix[i][j] = 0;
-                    continue;
-                }		
-				if(i<=subTreeRef.size()&&j>subTreeRef.size()){
-					int index=j-subTreeRef.size();
-					adjMatrix[i][j]=findSimilarity(subTreeRef.get(i),subTreeNonRef.get(index));
-					adjMatrix[j][i]=adjMatrix[i][j];
-				}
-                if (adjMatrix[i][j] == 0)
-                {
-                    adjMatrix[i][j] = Double.MAX_VALUE;
-                }
-			}
-		}
-		KruskalAlgorithm kruskalAlgorithm=new KruskalAlgorithm(numOfVertices);
-		kruskalAlgorithm.kruskalAlgorithm(adjMatrix);
-		double[][] spanningTree=kruskalAlgorithm.getSpanningTree();
-		return spanningTree;
-	}
 	public NCRPNode mergeTrees(NCRPNode referenceRoot, NCRPNode nonReferenceRoot) throws IOException{
 
 		NCRPNode n = h.new NCRPNode();
@@ -255,374 +231,73 @@ public class TreeMerger {
 		findSubTree(mergePoint, subTreeRef);
 		findSubTree(nonReferenceRoot, subTreeNonRef);
 
-		int numOfVertices=subTreeRef.size()+subTreeNonRef.size();
-		double[][] spanningTree = formMST(subTreeRef, subTreeNonRef);
-		List<Edge> edgesOfMST=new ArrayList<Edge>();
-		double[] weightOfEdges=new double[numOfVertices-1];
-		int count=0;
-		for (int source = 1; source <= numOfVertices; source++)
-		{
-			for (int destination = 1; destination <= numOfVertices; destination++)
+		UndirectedGraph<NCRPNode> bipartiteGraph =
+				new UndirectedGraph<HierarchicalLDA.NCRPNode>();
 
-			{
-				if(spanningTree[source][destination]!=0){
-					Edge e=new Edge();
-					e.sourcevertex=source;
-					e.destinationvertex=destination;
-					e.weight=spanningTree[source][destination];
-					edgesOfMST.add(e); 
-					weightOfEdges[count]=e.weight;
-					count++;
-				}
-
+		for (NCRPNode refTreeNode : subTreeRef) {
+			bipartiteGraph.addNode(refTreeNode);
+			for (NCRPNode nonRefTreeNode : subTreeNonRef) {
+				bipartiteGraph.addNode(nonRefTreeNode);
+				bipartiteGraph.addEdge(refTreeNode, nonRefTreeNode,
+						findSimilarity(refTreeNode, nonRefTreeNode));
 			}
 		}
-		Statistics stats=new Statistics(weightOfEdges);
-		double mean=stats.getMean();
-		double stdDev=stats.getStdDev();
-		List<Edge> edgesToFuse=new ArrayList<Edge>();
-		Iterator<Edge> iterator=edgesOfMST.iterator();
-		while(iterator.hasNext()){
-			Edge e=iterator.next();
-			if(e.weight<(mean+stdDev)){
-				e.weight=mean+stdDev-e.weight;
-				edgesToFuse.add(e);
+
+		UndirectedGraph<NCRPNode> mst = Kruskal.mst(bipartiteGraph);
+
+		List<MergeCandidate> nodePairList = new LinkedList<MergeCandidate>();
+
+		double[] weightOfEdges = new double[subTreeRef.size()
+				+ subTreeNonRef.size() - 1];
+		int i = 0;
+		
+		for (NCRPNode node : subTreeRef) {
+			Set<NCRPNode> neighbourSet = mst.getNeighbours(node);
+			for (NCRPNode neighbour : neighbourSet) {
+				weightOfEdges[i++] = mst.edgeCost(node, neighbour);
+				nodePairList.add(new MergeCandidate(node, neighbour, mst
+						.edgeCost(node, neighbour)));
 			}
 		}
-		Collections.sort(edgesToFuse, new EdgeDecComparator());
-		//make it parallel
-		iterator=edgesToFuse.iterator();
-		while(iterator.hasNext()){
-			Edge e=iterator.next();
-			unifyNodes(subTreeRef.get(e.sourcevertex-1),subTreeNonRef.get(e.destinationvertex-subTreeRef.size()-1));
+
+		Statistics stats = new Statistics(weightOfEdges);
+		double mean = stats.getMean();
+		double stdDev = stats.getStdDev();
+
+		PriorityQueue<MergeCandidate> heap = new PriorityQueue<MergeCandidate>(
+				new Comparator<MergeCandidate>() {
+					public int compare(MergeCandidate o1, MergeCandidate o2) {
+						if (o1.getWeight() < o2.getWeight()) {
+							return -1;
+						} else if (o1.getWeight() < o2.getWeight()) {
+							return 1;
+						} else {
+							return 0;
+						}
+					}
+				});
+		for (MergeCandidate candidate : nodePairList) {
+			if (candidate.weight < (mean + stdDev))
+				heap.add(candidate);
+		}
+
+		HashSet<NCRPNode> processedNonRefNode = 
+				new HashSet<HierarchicalLDA.NCRPNode>();
+
+		// make it parallel
+		while (!heap.isEmpty()) {
+			MergeCandidate fuseCandidate = heap.poll();
+			if (!processedNonRefNode.contains(fuseCandidate.getNonRefNode())) {
+				unifyNodes(fuseCandidate.getRefTreeNode(),
+						fuseCandidate.getNonRefNode());
+				processedNonRefNode.add(fuseCandidate.nonRefNode);
+			}
 		}
 
 		return referenceRoot;
 	}
 }
 
-class KruskalAlgorithm
-
-{
-
-	private List<Edge> edges;
-
-	private int numberOfVertices;
-
-	public static final double MAX_VALUE = Double.MAX_VALUE;
-
-	private int visited[];
-
-	private double spanning_tree[][];
-
-	public KruskalAlgorithm(int numberOfVertices)
-
-	{
-
-		this.numberOfVertices = numberOfVertices;
-
-		edges = new LinkedList<Edge>();
-
-		visited = new int[this.numberOfVertices + 1];
-
-		spanning_tree = new double[numberOfVertices + 1][numberOfVertices + 1];
-
-	}
-
-	public double[][] getSpanningTree() {
-		return spanning_tree;
-	}
-
-	public void kruskalAlgorithm(double adjacencyMatrix[][])
-
-	{
-
-		boolean finished = false;
-
-		for (int source = 1; source <= numberOfVertices; source++)
-
-		{
-
-			for (int destination = 1; destination <= numberOfVertices; destination++)
-
-			{
-
-				if (adjacencyMatrix[source][destination] != Double.MAX_VALUE
-						&& source != destination)
-
-				{
-
-					Edge edge = new Edge();
-
-					edge.sourcevertex = source;
-
-					edge.destinationvertex = destination;
-
-					edge.weight = adjacencyMatrix[source][destination];
-
-					adjacencyMatrix[destination][source] = MAX_VALUE;
-
-					edges.add(edge);
-
-				}
-
-			}
-
-		}
-
-		Collections.sort(edges, new EdgeComparator());
-
-		CheckCycle checkCycle = new CheckCycle();
-
-		for (Edge edge : edges)
-
-		{
-
-			spanning_tree[edge.sourcevertex][edge.destinationvertex] = edge.weight;
-
-			spanning_tree[edge.destinationvertex][edge.sourcevertex] = edge.weight;
-
-			if (checkCycle.checkCycle(spanning_tree, edge.sourcevertex))
-
-			{
-
-				spanning_tree[edge.sourcevertex][edge.destinationvertex] = 0;
-
-				spanning_tree[edge.destinationvertex][edge.sourcevertex] = 0;
-
-				edge.weight = -1;
-
-				continue;
-
-			}
-
-			visited[edge.sourcevertex] = 1;
-
-			visited[edge.destinationvertex] = 1;
-
-			for (int i = 0; i < visited.length; i++)
-
-			{
-
-				if (visited[i] == 0)
-
-				{
-
-					finished = false;
-
-					break;
-
-				} else
-
-				{
-
-					finished = true;
-
-				}
-
-			}
-
-			if (finished)
-
-				break;
-
-		}
-
-		System.out.println("The spanning tree is ");
-
-		for (int i = 1; i <= numberOfVertices; i++)
-
-			System.out.print("\t" + i);
-
-		System.out.println();
-
-		for (int source = 1; source <= numberOfVertices; source++)
-
-		{
-
-			System.out.print(source + "\t");
-
-			for (int destination = 1; destination <= numberOfVertices; destination++)
-
-			{
-
-				System.out.print(spanning_tree[source][destination] + "\t");
-
-			}
-
-			System.out.println();
-
-		}
-
-	}
-
-}
-
-class Edge
-
-{
-
-	int sourcevertex;
-
-	int destinationvertex;
-
-	double weight;
-
-}
-
-class EdgeComparator implements Comparator<Edge>
-
-{
-
-	public int compare(Edge edge1, Edge edge2)
-
-	{
-
-		if (edge1.weight < edge2.weight)
-
-			return -1;
-
-		if (edge1.weight > edge2.weight)
-
-			return 1;
-
-		return 0;
-
-	}
-
-}
-
-class EdgeDecComparator implements Comparator<Edge>
-
-{
-
-	public int compare(Edge edge1, Edge edge2) {
-
-		if (edge1.weight > edge2.weight)
-
-			return -1;
-
-		if (edge1.weight < edge2.weight)
-
-			return 1;
-
-		return 0;
-
-	}
-
-}
-
-class CheckCycle
-
-{
-
-	private Stack<Integer> stack;
-
-	private double adjacencyMatrix[][];
-
-	public CheckCycle()
-
-	{
-
-		stack = new Stack<Integer>();
-
-	}
-
-	public boolean checkCycle(double adjacency_matrix[][], int source)
-
-	{
-
-		boolean cyclepresent = false;
-
-		int number_of_nodes = adjacency_matrix[source].length - 1;
-
-		adjacencyMatrix = new double[number_of_nodes + 1][number_of_nodes + 1];
-
-		for (int sourcevertex = 1; sourcevertex <= number_of_nodes; sourcevertex++)
-
-		{
-
-			for (int destinationvertex = 1; destinationvertex <= number_of_nodes; destinationvertex++)
-
-			{
-
-				adjacencyMatrix[sourcevertex][destinationvertex] = adjacency_matrix[sourcevertex][destinationvertex];
-
-			}
-
-		}
-
-		int visited[] = new int[number_of_nodes + 1];
-
-		int element = source;
-
-		int i = source;
-
-		visited[source] = 1;
-
-		stack.push(source);
-
-		while (!stack.isEmpty())
-
-		{
-
-			element = stack.peek();
-
-			i = element;
-
-			while (i <= number_of_nodes)
-
-			{
-
-				if (adjacencyMatrix[element][i] >= 1 && visited[i] == 1)
-
-				{
-
-					if (stack.contains(i))
-
-					{
-
-						cyclepresent = true;
-
-						return cyclepresent;
-
-					}
-
-				}
-
-				if (adjacencyMatrix[element][i] >= 1 && visited[i] == 0)
-
-				{
-
-					stack.push(i);
-
-					visited[i] = 1;
-
-					adjacencyMatrix[element][i] = 0;// mark as labelled;
-
-					adjacencyMatrix[i][element] = 0;
-
-					element = i;
-
-					i = 1;
-
-					continue;
-
-				}
-
-				i++;
-
-			}
-
-			stack.pop();
-
-		}
-
-		return cyclepresent;
-
-	}
-
-}
 
 class Statistics {
 
@@ -654,3 +329,44 @@ class Statistics {
 	}
 
 }
+
+
+class MergeCandidate {
+	NCRPNode refTreeNode;
+	NCRPNode nonRefNode;
+	double weight;
+
+	public MergeCandidate(NCRPNode refTreeNode, NCRPNode nonRefNode,
+			double weight) {
+		super();
+		this.refTreeNode = refTreeNode;
+		this.nonRefNode = nonRefNode;
+		this.weight = weight;
+	}
+
+	public NCRPNode getRefTreeNode() {
+		return refTreeNode;
+	}
+
+	public void setRefTreeNode(NCRPNode refTreeNode) {
+		this.refTreeNode = refTreeNode;
+	}
+
+	public NCRPNode getNonRefNode() {
+		return nonRefNode;
+	}
+
+	public void setNonRefNode(NCRPNode nonRefNode) {
+		this.nonRefNode = nonRefNode;
+	}
+
+	public double getWeight() {
+		return weight;
+	}
+
+	public void setWeight(double weight) {
+		this.weight = weight;
+	}
+
+}
+
