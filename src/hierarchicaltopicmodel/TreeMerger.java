@@ -3,6 +3,7 @@ package hierarchicaltopicmodel;
 import graph.Kruskal;
 import graph.UndirectedGraph;
 import hierarchicaltopicmodel.HierarchicalLDA.NCRPNode;
+import dissimilaritymetrics.MetricAPI;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.Stack;
@@ -23,7 +25,7 @@ public class TreeMerger {
 	public static final double log2 = Math.log(2);
 	public HierarchicalLDA h;
 	public HashMap<Integer, HashMap<NCRPNode, Double>> referenceTreeMap;
-	
+
 	public TreeMerger(){
 		h = new HierarchicalLDA();
 	}
@@ -32,71 +34,15 @@ public class TreeMerger {
 		return node1;
 	}
 
-	public double findSimilarity(NCRPNode node, NCRPNode subTreeRoot) throws IOException {
+	public double findSimilarity(NCRPNode node1, NCRPNode node2) throws IOException {
 
-		ArrayList<String> vocabulary = new ArrayList<String>();
+		MetricAPI m = new MetricAPI();
+		Map<String,Integer> wordMap1 = node1.wordCount;
+		int wordMap1Count = node1.totalTokens;
+		Map<String,Integer> wordMap2 = node2.wordCount;
+		int wordMap2Count = node2.totalTokens;
 
-		Set<String> words1 = node.getKeySet();
-		Iterator<String> it1 = words1.iterator();
-		int nodeTotal=0,subTreeTotal=0;
-		while(it1.hasNext()){ 
-			String s = (String) it1.next();
-			nodeTotal += (int)node.getWordCount(s);
-			vocabulary.add(s);
-		}
-
-		Set<String> words3 = subTreeRoot.getKeySet();
-		Set words2 = Collections.synchronizedSet(new HashSet(words3));
-		Iterator<String> it2 = words2.iterator();
-		while(it2.hasNext()) {
-			String s = (String) it2.next();
-			subTreeTotal += (int)subTreeRoot.getWordCount(s);
-			if(!vocabulary.contains(s))
-				vocabulary.add(s);
-		}
-
-		HashMap<String,Double> probabilityDistributionMap1 = new HashMap<String,Double>();
-		HashMap<String,Double> probabilityDistributionMap2 = new HashMap<String,Double>();
-
-
-
-		for(int i=0;i<vocabulary.size();i++) {
-
-			String s = vocabulary.get(i);
-
-			probabilityDistributionMap1.put(s, 0.0);
-			probabilityDistributionMap2.put(s, 0.0);
-
-			if(node.checkKey(s)) 
-				probabilityDistributionMap1.put(s, node.getWordCount(s)/(1.0*nodeTotal));
-
-			if(subTreeRoot.checkKey(s)) 
-				probabilityDistributionMap2.put(s, subTreeRoot.getWordCount(s)/(1.0*subTreeTotal));
-
-		}
-		double dist1= klDivergence(probabilityDistributionMap1,probabilityDistributionMap2);
-		double dist2= klDivergence(probabilityDistributionMap2,probabilityDistributionMap1);
-		return (dist1+dist2)/2;
-	}
-
-	public double klDivergence(HashMap<String,Double> p1, HashMap<String,Double> p2) {
-
-		double klDiv = 0.0;
-		Collection<Double> c1 = p1.values();
-		Collection<Double> c2 = p2.values();
-		Iterator<Double> it1 = c1.iterator();
-		Iterator<Double> it2 = c2.iterator();
-
-		while(it1.hasNext()) {
-			double prob1 = ((Double) it1.next()).doubleValue();
-			double prob2 = ((Double) it2.next()).doubleValue();
-			if((prob1!=0.0) && (prob2!= 0.0))
-				klDiv += prob1 * Math.log( prob1 / prob2 );
-		}
-
-		klDiv /= log2;
-		return klDiv;
-
+		return m.findJSDivergence(wordMap1, wordMap1Count, wordMap2, wordMap2Count);
 	}
 
 	public void unifyNodes(NCRPNode node1, NCRPNode node2) {
@@ -248,9 +194,9 @@ public class TreeMerger {
 		List<MergeCandidate> nodePairList = new LinkedList<MergeCandidate>();
 
 		double[] weightOfEdges = new double[subTreeRef.size()
-				+ subTreeNonRef.size() - 1];
+		                                    + subTreeNonRef.size() - 1];
 		int i = 0;
-		
+
 		for (NCRPNode node : subTreeRef) {
 			Set<NCRPNode> neighbourSet = mst.getNeighbours(node);
 			for (NCRPNode neighbour : neighbourSet) {
