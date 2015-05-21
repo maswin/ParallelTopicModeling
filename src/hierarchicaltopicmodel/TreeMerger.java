@@ -24,11 +24,11 @@ public class TreeMerger {
 
 	public static final double log2 = Math.log(2);
 	public HierarchicalLDA h;
-	public HashMap<Integer, HashMap<NCRPNode, Double>> referenceTreeMap;
 
 	public TreeMerger(){
 		h = new HierarchicalLDA();
 	}
+
 	public NCRPNode findReferenceTree(NCRPNode node1, NCRPNode node2){
 		//Place SVM Logic here
 		return node1;
@@ -143,6 +143,23 @@ public class TreeMerger {
 		}
 	}
 
+	public void fetchMasterWords(NCRPNode node, Map<String, Integer> masterWordMap){
+		masterWordMap.putAll(node.getWordCount());
+		for(NCRPNode n : node.getChildren()){
+			fetchMasterWords(n, masterWordMap);
+		}
+	}
+	public List<String> formMasterWordList(List<NCRPNode> nodeList){
+		Map<String, Integer> masterWordMap = new HashMap<String, Integer>();
+		List<String> masterWordList = new ArrayList<String>();
+		for(NCRPNode node : nodeList){
+			fetchMasterWords(node, masterWordMap);
+		}
+		for(String word : masterWordMap.keySet()){
+			masterWordList.add(word);
+		}
+		return masterWordList;
+	}
 	public NCRPNode mergeTrees(NCRPNode referenceRoot, NCRPNode nonReferenceRoot) throws IOException{
 
 		NCRPNode n = h.new NCRPNode();
