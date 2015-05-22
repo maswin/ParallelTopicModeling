@@ -26,9 +26,14 @@ public class TreeMerger {
 		h = new HierarchicalLDA();
 	}
 
-	public NCRPNode findReferenceTree(NCRPNode node1, NCRPNode node2) {
-		// Place SVM Logic here
-		return node1;
+	public NCRPNode findReferenceTree(NCRPNode root1, NCRPNode root2) throws IOException {
+		AD_DA_Classifier classifier = new AD_DA_Classifier();
+		classifier.loadModel();
+		AD_DA_Classifier.Relation relation = classifier.predict(root1, root2);
+		if (relation == AD_DA_Classifier.Relation.AD)
+			return root1;
+		else
+			return root2;
 	}
 
 	public double findSimilarity(NCRPNode node1, NCRPNode node2)
@@ -42,33 +47,6 @@ public class TreeMerger {
 
 		return m.findJSDivergence(wordMap1, wordMap1Count, wordMap2,
 				wordMap2Count);
-	}
-
-	public void unifyNodes(NCRPNode node1, NCRPNode node2) {
-
-		System.out.println("In unifyNodes");
-		// Adding the documents and customers
-		for (int i = 0; i < node2.documents.size(); i++) {
-			if (!(node1.documents.contains(node2.documents.get(i)))) {
-				node1.documents.add(node2.documents.get(i));
-				node1.customers++;
-			}
-		}
-
-		// Adding the words and updating total tokens
-		Set<String> words = node2.wordCount.keySet();
-		Iterator<String> it = words.iterator();
-		while (it.hasNext()) {
-			String w = (String) it.next();
-			if (node1.wordCount.containsKey(w)) {
-				int count = (node1.wordCount.get(w) + node2.wordCount.get(w)) / 2;
-				node1.wordCount.put(w, count);
-			} else {
-				node1.wordCount.put(w, node2.wordCount.get(w));
-				node1.totalTokens++;
-			}
-		}
-
 	}
 
 	public NCRPNode mergeNodes(NCRPNode node1, NCRPNode node2)
@@ -134,7 +112,7 @@ public class TreeMerger {
 	}
 
 	public void findSubTree(NCRPNode root, List<NCRPNode> subTree) {
-		for(NCRPNode child : root.children){
+		for (NCRPNode child : root.children) {
 			subTree.add(child);
 			findSubTree(child, subTree);
 		}
