@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.CountDownLatch;
 
 public class TreeMerger {
 
@@ -160,6 +161,23 @@ public class TreeMerger {
 		}
 		return masterWordList;
 	}
+	
+	private CountDownLatch percolateNodeSummary(NCRPNode referenceTreeNode,
+			NCRPNode nonReferenceRoot,int dept) {
+		
+		CountDownLatch latch;
+		
+		if(referenceTreeNode.parent != null){
+			latch = percolateNodeSummary(referenceTreeNode.parent, nonReferenceRoot, dept+1);
+		}else{
+			latch = new CountDownLatch(dept);
+		}
+		
+		new NodeUnifier(referenceTreeNode, nonReferenceRoot, latch).run();
+		
+		return latch;
+	}
+	
 	public NCRPNode mergeTrees(NCRPNode referenceRoot, NCRPNode nonReferenceRoot) throws IOException{
 
 		NCRPNode n = h.new NCRPNode();
@@ -180,13 +198,8 @@ public class TreeMerger {
 		//Find merge point
 		NCRPNode mergePoint=findMergePoint(referenceRoot, nonReferenceRoot);
 
-		NCRPNode tempPtr=mergePoint;
-
-		//to parallel - copy reference tree to a concurrent hash map? 
-		while(tempPtr!=null){
-			unifyNodes(tempPtr, nonReferenceRoot);
-			tempPtr=tempPtr.parent;
-		}
+		CountDownLatch percolationStatus = 
+				percolateNodeSummary(mergePoint,nonReferenceRoot,1);
 
 		//List of Nodes to be merged
 		List<NCRPNode> subTreeRef=new ArrayList<NCRPNode>();
@@ -257,6 +270,7 @@ public class TreeMerger {
 			}
 		}
 
+		percolationStatus.await();
 		return referenceRoot;
 	}
 }
@@ -331,5 +345,51 @@ class MergeCandidate {
 		this.weight = weight;
 	}
 
+}
+
+class NodeUnifier implements Runnable{
+
+	private NCRPNode node1;
+	private NCRPNode node2;
+	private CountDownLatch latch;
+	
+	public NodeUnifier(NCRPNode node1, NCRPNode node2, CountDownLatch latch) {
+		super();
+		this.node1 = node1;
+		this.node2 = node2;
+		this.latch = latch;
+	}
+
+	@Override
+	public void run() {
+		unifyNodes(node1, node2);
+		this.latch.countDown();
+	}
+	private void unifyNodes(NCRPNode node1, NCRPNode node2) {
+
+		System.out.println("In unifyNodes");
+		// Adding the documents and customers
+		for (int i = 0; i < node2.documents.size(); i++) {
+			if (!(node1.documents.contains(node2.documents.get(i)))) {
+				node1.documents.add(node2.documents.get(i));
+				node1.customers++;
+			}
+		}
+
+		// Adding the words and updating total tokens
+		Set<String> words = node2.wordCount.keySet();
+		Iterator<String> it = words.iterator();
+		while (it.hasNext()) {
+			String w = (String) it.next();
+			if (node1.wordCount.containsKey(w)) {
+				int count = (node1.wordCount.get(w) + node2.wordCount.get(w)) / 2;
+				node1.wordCount.put(w, count);
+			} else {
+				node1.wordCount.put(w, node2.wordCount.get(w));
+				node1.totalTokens++;
+			}
+		}
+
+	}	
 }
 
