@@ -132,7 +132,7 @@ public class TopicHierarchy {
 
 			long startMergeTime = System.nanoTime();
 			MergerServices ms = new MergerServices(tm, subTreeRootList);
-			root = ms.runMergerServices();
+			root = ms.runMergerServiceMaster();
 			long endMergeTime = System.nanoTime();
 
 			System.out.println("Merge Algorithm Running Time " + (endMergeTime-startMergeTime)); 
@@ -178,7 +178,7 @@ public class TopicHierarchy {
 				MPI.COMM_WORLD.Send(node, 0, 1, MPI.OBJECT, 0, size+6+i);
 				
 			}
-			
+			new MergerServices(null, null).runMergerServiceSlave();
 		}
 	}
 
