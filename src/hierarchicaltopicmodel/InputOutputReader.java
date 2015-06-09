@@ -2,6 +2,8 @@ package hierarchicaltopicmodel;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,33 +11,40 @@ import java.io.InputStreamReader;
 
 public class InputOutputReader {
 
-    public String[] getHldaParameters() {
+    public String[] getHldaParameters() throws FileNotFoundException {
     	   	
-    	BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); 
+    	BufferedReader br = new BufferedReader(new FileReader("inputParameters.txt")); 
     	String[] inputParameters = new String[11];
     	
     	try {
     		
     		System.out.println("Enter the number of iterations.");
     		inputParameters[4] = br.readLine();
+    		System.out.println(inputParameters[4]);
     		
     		System.out.println("Enter the number of iterations after which brief summary of topics is to be displayed everytime.");
     		inputParameters[5] = br.readLine();
+    		System.out.println(inputParameters[5]);
     		
     		System.out.println("Enter the number of most probable words to print for each topic after model estimation.");
     		inputParameters[6] = br.readLine();
+    		System.out.println(inputParameters[6]);
     		
     		System.out.println("Enter the number of levels in the hLDA Tree to be constructed.");
     		inputParameters[7] = br.readLine();
+    		System.out.println(inputParameters[7]);
     		
     		System.out.println("Enter the alpha paramater : Alpha parameter - smoothing over level distributions.");
     		inputParameters[8] = br.readLine();
+    		System.out.println(inputParameters[8]);
     		
     		System.out.println("Enter the gamma parameter : Gamma parameter - CRP smoothing parameter");
     		inputParameters[9] = br.readLine();
+    		System.out.println(inputParameters[9]);
     		
     		System.out.println("Enter the eta parameter : Eta parameter - smoothing over topic-word distributions");
     		inputParameters[10] = br.readLine();
+    		System.out.println(inputParameters[10]);
     		
     	}
     	
