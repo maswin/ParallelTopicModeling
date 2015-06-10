@@ -750,7 +750,8 @@ public class HierarchicalLDA implements Serializable{
 		}
 		public NCRPNode() {
 			wordCount = new HashMap<String,Integer>();
-			totalTokens = 0;
+			documents = new ArrayList<String>();
+			children = new ArrayList<NCRPNode>();
 		}
 		public NCRPNode(NCRPNode parent, int dimensions, int level) {
 			customers = 0;
