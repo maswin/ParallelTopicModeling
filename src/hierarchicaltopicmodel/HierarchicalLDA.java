@@ -4,11 +4,6 @@ package hierarchicaltopicmodel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.io.*;
 
 import cc.mallet.types.*;
@@ -43,7 +38,7 @@ public class HierarchicalLDA implements Serializable{
 
 	boolean showProgress = true;
 
-	int displayTopicsInterval; // = 50;
+	int displayTopicsInterval  = 5;
 	int numWordsToDisplay = 10; // = 10;
 
 
@@ -311,7 +306,7 @@ public class HierarchicalLDA implements Serializable{
 			NCRPNode node, double weight) {
 		for (NCRPNode child: node.children) {
 			calculateNCRP(nodeWeights, child,
-					weight + Math.log((double) child.customers / (node.customers + gamma)));
+					weight + Math.log(child.customers / (node.customers + gamma)));
 		}
 
 		nodeWeights.put(node, weight + Math.log(gamma / (node.customers + gamma)));
@@ -828,7 +823,7 @@ public class HierarchicalLDA implements Serializable{
 
 			int i = 0;
 			for (NCRPNode child: children) {
-				weights[i] = (double) child.customers / (gamma + customers);
+				weights[i] = child.customers / (gamma + customers);
 				i++;
 			}
 
@@ -843,7 +838,7 @@ public class HierarchicalLDA implements Serializable{
 
 			int i = 1;
 			for (NCRPNode child: children) {
-				weights[i] = (double) child.customers / (gamma + customers);
+				weights[i] = child.customers / (gamma + customers);
 				i++;
 			}
 

@@ -65,7 +65,7 @@ public class TreeMerger {
 		Set<String> words = node2.wordCount.keySet();
 		Iterator<String> it = words.iterator();
 		while (it.hasNext()) {
-			String w = (String) it.next();
+			String w = it.next();
 			if (node1.wordCount.containsKey(w)) {
 				int count = (node1.wordCount.get(w) + node2.wordCount.get(w)) / 2;
 				merged.wordCount.put(w, count);
@@ -250,6 +250,7 @@ public class TreeMerger {
 
 		// Sort merge candidates in increasing order of edge weight
 		Collections.sort(mergeCandidateList, new Comparator<MergeCandidate>() {
+			@Override
 			public int compare(MergeCandidate o1, MergeCandidate o2) {
 				if (o1.getWeight() < o2.getWeight()) {
 					return -1;

@@ -6,136 +6,149 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.io.BufferedReader;
-import java.io.FileOutputStream;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.File;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.io.Serializable;
-
-import cc.mallet.types.InstanceList;
-
-
 
 public class TopicHierarchy {
 
-	public static void main(String args[]) throws NumberFormatException, IOException, InterruptedException  {
+	private int iterations;
+	private int levels;
+	private double alpha;
+	private double gamma;
+	private double eta;
+	private String inputDir;
 
-		long startTime = System.nanoTime();
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		int threads = Runtime.getRuntime().availableProcessors();
-		ExecutorService executor = Executors.newFixedThreadPool(threads);
+	public TopicHierarchy(int iterations, int levels, double alpha,
+			double gamma, double eta, String inputDir) {
+		super();
+		this.iterations = iterations;
+		this.levels = levels;
+		this.alpha = alpha;
+		this.gamma = gamma;
+		this.eta = eta;
+		this.inputDir = inputDir;
+	}
 
-		String folderName = null;
+	public NCRPNode constructTopicTree() {
 
-		try {
-			System.out.println("Enter the input directory name : ");	
-			folderName = br.readLine();	
-		}catch(IOException e) {	
-			e.printStackTrace();
-		}
-
-		File folder = new File(folderName);
+		File folder = new File(inputDir);
 		String[] fileNames = new String[folder.listFiles().length];
 
 		int i = 0;
-		for(File f : folder.listFiles()) 
+		for (File f : folder.listFiles())
 			fileNames[i++] = f.getAbsolutePath();
 
-		InputOutputReader ior = new InputOutputReader();
-		String[] inputParameters = ior.getHldaParameters();
+		ConcurrentHashMap<Integer, NCRPNode> rootMap = new ConcurrentHashMap<Integer, NCRPNode>();
 
-		ConcurrentHashMap<Integer,ArrayList<NCRPNode>> subTreeRoots = new ConcurrentHashMap<Integer,ArrayList<NCRPNode>>();
-		ArrayList<NCRPNode> leaves = new ArrayList<NCRPNode>();
+		new WorkerThread(0, levels, alpha, gamma, eta, 40, folder.listFiles(),
+				rootMap).run();
 
-		for (i = 0; i < threads; i++) {
+		return rootMap.get(0);
+	}
 
-			Runnable worker = new WorkerThread(fileNames,i,inputParameters,subTreeRoots,leaves);
+	public NCRPNode constructTopicTreeParallel() {
+		File folder = new File(inputDir);
+		String[] fileNames = new String[folder.listFiles().length];
+
+		int i = 0;
+		for (File f : folder.listFiles())
+			fileNames[i++] = f.getAbsolutePath();
+
+		ConcurrentHashMap<Integer, NCRPNode> rootMap = new ConcurrentHashMap<Integer, NCRPNode>();
+
+		int threads = Runtime.getRuntime().availableProcessors();
+		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		for (i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
+			Runnable worker;
+			if (i == threads - 1) {
+		
+				worker = new WorkerThread(i, levels, alpha, gamma, eta, 40,
+						Arrays.copyOfRange(folder.listFiles(),
+								i * (folder.listFiles().length / threads),
+								folder.listFiles().length), rootMap);
+			} else {
+				worker = new WorkerThread(
+						i,
+						levels,
+						alpha,
+						gamma,
+						eta,
+						40,
+						Arrays.copyOfRange(folder.listFiles(),
+								i * (folder.listFiles().length / threads),
+								(i + 1) * (folder.listFiles().length / threads)),
+						rootMap);
+			}
+
 			executor.execute(worker);
-
 		}
 		executor.shutdown();
 		while (!executor.isTerminated()) {
 		}
 
-		ArrayList<NCRPNode> subTreeRootList = new ArrayList<NCRPNode>();
-		for(i=0;i<subTreeRoots.size();i++) {
-			ArrayList<NCRPNode> al = subTreeRoots.get(i);
-			for(int j=0;j<al.size();j++){
-				subTreeRootList.add(al.get(j));
-			}
-		}
-		System.out.println("SubTree Count : "+subTreeRootList.size());
+		List<NCRPNode> subTreeRoots = new ArrayList<HierarchicalLDA.NCRPNode>();
 
+		for (Integer key : rootMap.keySet()) {
+			subTreeRoots.add(rootMap.get(key));
+		}
 		TreeMerger tm = new TreeMerger();
-		NCRPNode root ;
+		MergerServices mergerService = new MergerServices(tm, subTreeRoots);
+		NCRPNode root = null;
+		try {
+			root = mergerService.runMergerServices();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
-		long startMergeTime = System.nanoTime();
-		MergerServices ms = new MergerServices(tm, subTreeRootList);
-		root = ms.runMergerServices();
-		long endMergeTime = System.nanoTime();
-
-		System.out.println("Merge Algorithm Running Time " + (endMergeTime-startMergeTime)); 
-
-		System.out.println("\nMERGE SUCCESSFUL\n");
-
-		HierarchicalLDA hlda = new HierarchicalLDA();
-		PrintWriter pw = new PrintWriter("MergedOutputFile.txt");
-		hlda.printNode(root, 0, pw);
-		pw.close();
-
-		//displayDocuments(root,0);
-		long endTime = System.nanoTime();
-		System.out.println("Total Running Time = " + (endTime-startTime));
+		return root;
 	}
 
-	public static void displayDocuments(NCRPNode node, int indent) {
+	public static void main(String[] args) {
 
-		for (int i=0; i<node.documents.size(); i++) {
+		TopicHierarchy hlda = new TopicHierarchy(4, 4, 10, 1, 0.1, "mydir");
+		NCRPNode root = hlda.constructTopicTreeParallel();
+		displayCustom(root);
+	}
 
-			String s = node.documents.get(i);
-			int index = s.lastIndexOf("\\");
-			s = s.substring(index+1, s.length());
+	private static void displayCustom(NCRPNode root) {
 
-			for (int j=0; j<indent; j++) 
-				System.out.print("  ");
+		Queue<NCRPNode> queue1 = new LinkedList<HierarchicalLDA.NCRPNode>();
+		Queue<NCRPNode> queue2 = new LinkedList<HierarchicalLDA.NCRPNode>();
 
-			//System.out.println(node.nodeID+"/"+node.customers+" : ");
-			System.out.println(s);
-		}	
-		System.out.println();
+		System.out.println("size : " + root.children.size());
+		queue1.add(root);
+		while (!queue1.isEmpty()) {
+			System.out.println();
+			queue2.clear();
+			for (NCRPNode node : queue1) {
+				System.out.println();
+				System.out.print("ID :" + node.nodeID + " Level :" + node.level
+						+ " [");
 
-		for (NCRPNode child: node.children) {
-			displayDocuments(child, indent + 1);
+				for (NCRPNode child : node.children) {
+					System.out.print(child.nodeID + " ");
+					queue2.add(child);
+				}
+				System.out.print("] Doc[");
+
+				for (String doc : node.documents) {
+					System.out.print(doc + ",");
+				}
+				System.out.print("]");
+			}
+			queue1.clear();
+			queue1.addAll(queue2);
 		}
 
 	}
-
-
-}
-class test implements Serializable{
-	int a;
-	int customers;
-	public ArrayList<String> documents;
-	public ArrayList<NCRPNode> children;
-	public NCRPNode parent;
-	int level;
-
-	int mergeId;
-
-	int totalTokens;
-	public synchronized void setParent(NCRPNode parent) {
-		this.parent = parent;
-	}
-	int[] typeCounts;
-
-	public int nodeID;
-	HashMap<String, Integer> wordCount;
-	test(int tmp){
-		a = tmp;
-	}
-
 }

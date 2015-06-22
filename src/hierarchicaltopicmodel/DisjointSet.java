@@ -74,7 +74,7 @@ public class DisjointSet<E>{
 		it = setCount.keySet().iterator();
 		while(it.hasNext()){
 			similarElementsList = new ArrayList<E>();
-			e = (E)it.next();
+			e = it.next();
 			similarElementsList.add(e);
 			processed.put(e, true);
 			setOfElements.put(e, similarElementsList);
@@ -83,7 +83,7 @@ public class DisjointSet<E>{
 		//Examine all the other elements.
 		it = parentMap.keySet().iterator();
 		while(it.hasNext()){
-			e = (E)it.next();
+			e = it.next();
 
 			//If processed contains the node then its placed in its set already. 
 			if(processed.containsKey(e)){
@@ -108,7 +108,7 @@ public class DisjointSet<E>{
 		//Form final sets.
 		it = setCount.keySet().iterator();
 		while(it.hasNext()){
-			e = (E)it.next();
+			e = it.next();
 			similarElementsList = setOfElements.get(e);
 			allSets.add(similarElementsList);
 		}
