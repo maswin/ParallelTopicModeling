@@ -61,7 +61,7 @@ public class Main extends JFrame {
 	 */
 	public Main() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 500, 415);
+		setBounds(100, 100, 500, 478);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
@@ -74,7 +74,7 @@ public class Main extends JFrame {
 		desktopPane.setBackground(Color.WHITE);
 		tabbedPane.addTab("Parallel HLDA", null, desktopPane, null);
 
-		JButton btnNewButton = new JButton("Generate Topic Tree");
+		JButton btnNewButton = new JButton("Parallel HLDA");
 		btnNewButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -92,7 +92,7 @@ public class Main extends JFrame {
 				frame.setVisible(true);
 			}
 		});
-		btnNewButton.setBounds(37, 292, 155, 23);
+		btnNewButton.setBounds(251, 295, 155, 23);
 		desktopPane.add(btnNewButton);
 
 		JTextPane txtpnNumberOfLevels = new JTextPane();
@@ -103,7 +103,7 @@ public class Main extends JFrame {
 		desktopPane.add(txtpnNumberOfLevels);
 
 		textField_Levels = new JTextField();
-		textField_Levels.setText("5");
+		textField_Levels.setText("2");
 		textField_Levels.setBounds(320, 37, 86, 20);
 		desktopPane.add(textField_Levels);
 		textField_Levels.setColumns(10);
@@ -115,7 +115,7 @@ public class Main extends JFrame {
 		desktopPane.add(txtpnNumberOfIterations);
 
 		textField_Iterations = new JTextField();
-		textField_Iterations.setText("40");
+		textField_Iterations.setText("10000");
 		textField_Iterations.setBounds(320, 73, 86, 20);
 		desktopPane.add(textField_Iterations);
 		textField_Iterations.setColumns(10);
@@ -127,7 +127,7 @@ public class Main extends JFrame {
 		desktopPane.add(txtpnAlphaParameter);
 
 		textField_Alpha = new JTextField();
-		textField_Alpha.setText("10");
+		textField_Alpha.setText("1");
 		textField_Alpha.setBounds(320, 104, 86, 20);
 		desktopPane.add(textField_Alpha);
 		textField_Alpha.setColumns(10);
@@ -196,7 +196,7 @@ public class Main extends JFrame {
 				}
 			}
 		});
-		btnNewButton_1.setBounds(242, 292, 164, 23);
+		btnNewButton_1.setBounds(146, 347, 164, 23);
 		desktopPane.add(btnNewButton_1);
 		
 		JTextPane txtpnNoOfTop = new JTextPane();
@@ -210,5 +210,26 @@ public class Main extends JFrame {
 		textField_TopWords.setColumns(10);
 		textField_TopWords.setBounds(320, 248, 86, 20);
 		desktopPane.add(textField_TopWords);
+		
+		JButton btnSequentialHlda = new JButton("Sequential HLDA");
+		btnSequentialHlda.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				TopicHierarchy hlda = new TopicHierarchy(Integer
+						.parseInt(textField_Iterations.getText()), Integer
+						.parseInt(textField_Levels.getText()), Double
+						.parseDouble(textField_Alpha.getText()), Double
+						.parseDouble(textField_Gamma.getText()), Double
+						.parseDouble(textField_Eta.getText()),
+						textField_InputDirectory.getText());
+				NCRPNode root = hlda.constructTopicTree();
+				TreeView frame = new TreeView(root, Integer.parseInt(textField_TopWords.getText()));
+				frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+				frame.setVisible(true);
+				
+				
+			}
+		});
+		btnSequentialHlda.setBounds(37, 295, 148, 23);
+		desktopPane.add(btnSequentialHlda);
 	}
 }
