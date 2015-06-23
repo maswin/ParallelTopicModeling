@@ -4,11 +4,7 @@ import hierarchicaltopicmodel.HierarchicalLDA.NCRPNode;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class MergerServices {
 	public static List<NCRPNode> subTreeRoots; // The Roots of Sub Trees to be merged
@@ -120,6 +116,7 @@ public class MergerServices {
 			lock = l;
 			subTreeRoots=subTrees;
 		}
+		@Override
 		public void run() {
 			
 			try {

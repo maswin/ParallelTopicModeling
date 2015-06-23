@@ -165,7 +165,8 @@ public final class Kruskal {
          * @param other The object to compare to.
          * @return How this object compares to the other.
          */
-        public int compareTo(Edge<T> other) {
+        @Override
+		public int compareTo(Edge<T> other) {
             /* Check how the costs compare. */
             if (cost < other.cost) return -1;
             if (cost > other.cost) return +1;

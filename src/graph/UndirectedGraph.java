@@ -136,7 +136,8 @@ public final class UndirectedGraph<T> implements Iterable<T> {
      *
      * @return An iterator that traverses the nodes in the graph.
      */
-    public Iterator<T> iterator() {
+    @Override
+	public Iterator<T> iterator() {
         return mGraph.keySet().iterator();
     }
 
