@@ -1,5 +1,6 @@
 package hierarchicaltopicmodel;
 
+import gui.TreeView;
 import hierarchicaltopicmodel.HierarchicalLDA.NCRPNode;
 
 import java.util.concurrent.ExecutorService;
@@ -147,6 +148,7 @@ public class TopicHierarchy {
 			//displayDocuments(root,0);
 			long endTime = System.nanoTime();
 			System.out.println("Total Running Time = " + (endTime-startTime));
+			new TreeView(root, 5).setVisible(true);
 		}else{
 			String[] fileNames;
 			int[] fileNamesLength = new int[1];
