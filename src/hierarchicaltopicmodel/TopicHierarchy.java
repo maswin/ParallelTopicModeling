@@ -19,6 +19,8 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.Serializable;
 
+import org.apache.commons.io.FileUtils;
+
 import mpi.MPI;
 import cc.mallet.types.InstanceList;
 
@@ -145,10 +147,17 @@ public class TopicHierarchy {
 			hlda.printNode(root, 0, pw);
 			pw.close();
 
-			//displayDocuments(root,0);
+			//Running Time
 			long endTime = System.nanoTime();
 			System.out.println("Total Running Time = " + (endTime-startTime));
+			
+			//displayDocuments(root,0);
+			displayDocuments(root,0);
 			new TreeView(root, 5).setVisible(true);
+			
+			//Clear Var directory
+			File varDoc = new File("var");
+			FileUtils.cleanDirectory(varDoc);
 		}else{
 			String[] fileNames;
 			int[] fileNamesLength = new int[1];

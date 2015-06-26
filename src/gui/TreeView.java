@@ -70,7 +70,7 @@ public class TreeView extends JFrame {
 
 	private String generateTopWords(int n, HashMap<String, Integer> wordCountMap) {
 
-		PriorityQueue<Integer> heap = new PriorityQueue<>(
+		PriorityQueue<Integer> heap = new PriorityQueue<>(10,
 				new Comparator<Integer>() {
 
 					@Override

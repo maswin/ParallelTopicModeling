@@ -1,6 +1,7 @@
 /bin/
 /TestDocuments/
 /var
+/mydir
 /MergedOutputFile.txt
 .classpath
 .project

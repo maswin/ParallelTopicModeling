@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
@@ -81,12 +82,18 @@ public class MPJWorkerThread {
 	}
 
 	public void removeStopWords(File inputDirectory) {
-
-		String command1 = "cd /home/aswin/mallet-2.0.7/\nbin/mallet import-dir --input " + inputDirectory.getAbsolutePath()+ " --output " + inputDirectory.getAbsolutePath() + ".mallet --keep-sequence --remove-stopwords"; //linux Change
-		String filename1 = "/home/aswin/workspace/ParallelTopicModeling/var/"+inputDirectory.getName()+"Features.sh"; //linux Change
+		Map<String, String> env = System.getenv();
+		String malletHome = env.get("MALLET_HOME");
+		
+		String command =  malletHome
+				+ "/bin/mallet import-dir --input "
+				+ inputDirectory.getAbsolutePath() + " --output "
+				+ inputDirectory.getAbsolutePath()
+				+ ".mallet --keep-sequence --remove-stopwords";
+		String filename = "var/"+inputDirectory.getName() + "Features.sh";
 		
 		InputOutputReader ior = new InputOutputReader();
-		ior.processInput(command1, filename1);
+		ior.processInput(command, filename);
 
 	}
 
