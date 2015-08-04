@@ -152,8 +152,10 @@ public class TopicHierarchy {
 			System.out.println("Total Running Time = " + (endTime-startTime));
 			
 			//displayDocuments(root,0);
-			displayDocuments(root,0);
-			new TreeView(root, 5).setVisible(true);
+			PrintWriter output = new PrintWriter(new File("output.txt"));
+			printDocuments(output,root,0);
+			output.close();
+			//new TreeView(root, 5).setVisible(true);
 			
 			//Clear Var directory
 			File varDoc = new File("var");
@@ -193,7 +195,7 @@ public class TopicHierarchy {
 		}
 	}
 
-	public static void displayDocuments(NCRPNode node, int indent) {
+	public static void printDocuments(PrintWriter pw, NCRPNode node, int indent) {
 
 		for (int i=0; i<node.documents.size(); i++) {
 
@@ -202,17 +204,17 @@ public class TopicHierarchy {
 			s = s.substring(index+1, s.length());
 
 			for (int j=0; j<indent; j++) 
-				System.out.print("  ");
+				pw.print("  ");
 
 			//System.out.println(node.nodeID+"/"+node.customers+" : ");
-			System.out.println(s);
+			pw.println(s);
 		}	
-		System.out.println();
+		pw.println();
 
 		for (NCRPNode child: node.children) {
-			displayDocuments(child, indent + 1);
+			printDocuments(pw, child, indent + 1);
 		}
-
+		
 	}
 
 
