@@ -45,8 +45,7 @@ public class TreeMerger {
 		Map<String, Integer> wordMap2 = node2.wordCount;
 		int wordMap2Count = node2.totalTokens;
 
-		return m.findJSDivergence(wordMap1, wordMap1Count, wordMap2,
-				wordMap2Count);
+		return m.findQuadChiHistogramDistance(wordMap1,wordMap2);
 	}
 
 	public NCRPNode mergeNodes(NCRPNode node1, NCRPNode node2)
